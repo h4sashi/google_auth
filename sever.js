@@ -14,7 +14,7 @@ const REDIRECT_URI = process.env.REDIRECT_URI;
 
 app.get('/auth/google/callback', async (req, res) => {
     const authCode = req.query.code;
-    const state = req.query.state; // Capture the state parameter from Unity
+    const state = req.query.state;
 
     if (!authCode || !state) {
         return res.status(400).send('Missing authorization code or state parameter.');
@@ -34,23 +34,23 @@ app.get('/auth/google/callback', async (req, res) => {
 
         const { access_token } = tokenResponse.data;
 
-        // Fetch user profile information
+        // Fetch user profile
         const userResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
             headers: { Authorization: `Bearer ${access_token}` },
         });
 
         const userProfile = userResponse.data;
-
-        // Store the profile data using the state as the key
         userProfiles[state] = userProfile;
 
-        // Inform the user to return to Unity
-        res.send('<html><body>Google Auth Successful! You can now return to the app.</body></html>');
+        // Redirect user back to Unity using a deep link
+        const deepLink = `mygame://auth?state=${state}`;
+        res.redirect(deepLink);
     } catch (error) {
         console.error('Error during authentication:', error);
         res.status(500).send('Authentication failed.');
     }
 });
+
 
 // Endpoint for Unity to retrieve the profile data
 app.get('/getProfile', (req, res) => {
